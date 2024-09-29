@@ -19,16 +19,38 @@ def predict():
 
     #Log prediction results
     mongo.db.predictions.insert_one({
-        "transaction": transaction_data, "prediction": prediction
+        "transaction": transaction_data, "prediction": "fraud" if prediction else "not fraud"
     })
 
-    return jsonify({"prediction": prediction})
+    if prediction:
+        send_alert(transaction_data)
+
+    return jsonify({"prediction": "fraud" if prediction else "not fraud"})
 
 
 def predict_fraud(transaction_data):
-    # Implement your model logic here
+    processed_data = preprocess(transaction_data)
+    fraud_probability = model.predict_proba(processed_data)[0][1]
     # For example, return True if fraud is detected, False otherwise
-    return model.predict(transaction_data)  # Replace with actual model call
+    return fraud_probability > 0.5  # Replace with actual model call
+
+def preprocess(transaction_data):
+    # Add logic to preprocess transaction data before feeding it to the model
+    # Example: return a list of features extracted from transaction_data
+    return [
+        transaction_data['amount'], 
+        transaction_data['transaction_type'], 
+        transaction_data['location']
+    ]
+
+
+def send_alert(transaction_data):
+    # Send an email or webhook alert when fraud is detected
+    if transaction_data["prediction"] == "fraud":
+        print('ALERT: Fraudulent transaction detected!', transaction_data)
+        return 'Caution: FRAUD'
+        
+
 
 
 
